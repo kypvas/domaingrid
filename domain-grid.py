@@ -662,6 +662,8 @@ def print_summary(data: DomainData):
 
 
 def main():
+    global MAX_WORKERS
+
     parser = argparse.ArgumentParser(
         description="Domain Grid - Advanced Active Directory Enumeration Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -701,7 +703,7 @@ Examples:
     else:
         args = parser.parse_args()
 
-    global MAX_WORKERS
+    # Update MAX_WORKERS from args (it's already a module-level variable)
     MAX_WORKERS = args.workers
 
     # Create results directory
