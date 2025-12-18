@@ -84,6 +84,7 @@ def execute_command(command: str, timeout: int = TIMEOUT) -> Tuple[List[str], bo
             result = subprocess.run(
                 command,
                 shell=True,
+                executable='/bin/bash',  # Use bash for process substitution support
                 timeout=timeout,
                 capture_output=True,
                 text=True
@@ -101,10 +102,12 @@ def execute_command(command: str, timeout: int = TIMEOUT) -> Tuple[List[str], bo
 
 
 def build_rpc_command(user: str, password: str, host: str, rpc_cmd: str) -> str:
-    """Build rpcclient command string using stdin for password."""
+    """Build rpcclient command string with proper escaping."""
     import shlex
-    # Pass password via stdin to avoid shell escaping issues with special chars
-    return f"echo {shlex.quote(password)} | rpcclient -U {shlex.quote(user)} {host} -c {shlex.quote(rpc_cmd)}"
+    # Use -A with inline credentials file via process substitution
+    # This avoids issues with special characters and works with proxychains
+    creds = f"{user}\\n{password}\\n"
+    return f"rpcclient -A <(printf '{creds}') {host} -c {shlex.quote(rpc_cmd)}"
 
 
 def fetch_domain_info(user: str, password: str, host: str, data: DomainData):
