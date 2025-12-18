@@ -102,16 +102,11 @@ def execute_command(command: str, timeout: int = TIMEOUT) -> Tuple[List[str], bo
 
 
 def build_rpc_command(user: str, password: str, host: str, rpc_cmd: str) -> str:
-    """Build rpcclient command string with temp credentials file."""
+    """Build rpcclient command string with quoted password."""
     import shlex
-    import tempfile
-    # Create temp credentials file for rpcclient -A option
-    # Format: username\npassword\ndomain (optional)
-    creds_file = f"/tmp/.rpc_creds_{os.getpid()}"
-    with open(creds_file, 'w') as f:
-        f.write(f"{user}\n{password}\n")
-    os.chmod(creds_file, 0o600)
-    return f"rpcclient -A {creds_file} {host} -c {shlex.quote(rpc_cmd)}"
+    # Quote the user%password string properly for special characters
+    creds = f"{user}%{password}"
+    return f"rpcclient -U '{creds}' {host} -c {shlex.quote(rpc_cmd)}"
 
 
 def fetch_domain_info(user: str, password: str, host: str, data: DomainData):
