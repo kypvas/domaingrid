@@ -702,6 +702,7 @@ Examples:
     parser.add_argument("-t", "--target", required=True, help="Domain Controller IP or hostname")
     parser.add_argument("-o", "--output", help="Output directory (default: results_<uuid>)")
     parser.add_argument("-w", "--workers", type=int, default=MAX_WORKERS, help=f"Parallel workers (default: {MAX_WORKERS})")
+    parser.add_argument("-T", "--timeout", type=int, default=TIMEOUT, help=f"Command timeout in seconds (default: {TIMEOUT})")
     parser.add_argument("--json", action="store_true", help="Export results as JSON")
     parser.add_argument("--csv", action="store_true", help="Export results as CSV")
     parser.add_argument("--no-nested", action="store_true", help="Skip nested group resolution")
@@ -716,6 +717,7 @@ Examples:
             target=sys.argv[3],
             output=None,
             workers=MAX_WORKERS,
+            timeout=TIMEOUT,
             json=False,
             csv=False,
             no_nested=False,
@@ -724,8 +726,10 @@ Examples:
     else:
         args = parser.parse_args()
 
-    # Update MAX_WORKERS from args (it's already a module-level variable)
+    # Update global settings from args
+    global MAX_WORKERS, TIMEOUT
     MAX_WORKERS = args.workers
+    TIMEOUT = args.timeout
 
     # Create results directory
     results_dir = args.output or f"results_{uuid.uuid4().hex[:8]}"
