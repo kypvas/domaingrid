@@ -77,8 +77,9 @@ def print_progress(current: int, total: int, desc: str):
     print(f"\r{Fore.CYAN}[{bar}] {percent:5.1f}% - {desc} ({current}/{total}){Style.RESET_ALL}", end="", flush=True)
 
 
-def execute_command(command: str, timeout: int = TIMEOUT) -> Tuple[List[str], bool]:
-    """Execute command with retries. Returns (output_lines, success)."""
+def execute_command(command: str, timeout: int = TIMEOUT, return_stderr: bool = False) -> Tuple[List[str], bool]:
+    """Execute command with retries. Returns (output_lines, success) or (output_lines, success, stderr) if return_stderr=True."""
+    last_stderr = ""
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             result = subprocess.run(
@@ -89,23 +90,33 @@ def execute_command(command: str, timeout: int = TIMEOUT) -> Tuple[List[str], bo
                 capture_output=True,
                 text=True
             )
+            last_stderr = result.stderr
             if result.returncode == 0:
+                if return_stderr:
+                    return result.stdout.splitlines(), True, result.stderr
                 return result.stdout.splitlines(), True
             if "NT_STATUS_ACCESS_DENIED" in result.stderr:
+                if return_stderr:
+                    return [], False, result.stderr
                 return [], False
         except subprocess.TimeoutExpired:
-            pass
-        except Exception:
-            pass
+            last_stderr = "TIMEOUT"
+        except Exception as e:
+            last_stderr = str(e)
         time.sleep(0.5)
+    if return_stderr:
+        return [], False, last_stderr
     return [], False
 
 
 def build_rpc_command(user: str, password: str, host: str, rpc_cmd: str) -> str:
     """Build rpcclient command string with quoted password."""
-    import shlex
-    # Quote only the password for special characters, not the username
-    return f"rpcclient -U {user}%'{password}' {host} -c {shlex.quote(rpc_cmd)}"
+    # Quote only the password with single quotes (don't use shlex.quote as it escapes !)
+    # Single quotes preserve all special characters literally in bash
+    # Escape any single quotes in the password by ending quote, adding escaped quote, starting new quote
+    escaped_pass = password.replace("'", "'\"'\"'")
+    # Also quote the rpc command with single quotes
+    return f"rpcclient -U {user}%'{escaped_pass}' {host} -c '{rpc_cmd}'"
 
 
 def fetch_domain_info(user: str, password: str, host: str, data: DomainData):
@@ -125,10 +136,12 @@ def fetch_groups(user: str, password: str, host: str, data: DomainData, debug: b
     cmd = build_rpc_command(user, password, host, "enumdomgroups")
     if debug:
         print(f"DEBUG CMD: {cmd}")
-    output, success = execute_command(cmd)
-    if debug:
+        output, success, stderr = execute_command(cmd, return_stderr=True)
         print(f"DEBUG OUTPUT: {output}")
+        print(f"DEBUG STDERR: {stderr}")
         print(f"DEBUG SUCCESS: {success}")
+    else:
+        output, success = execute_command(cmd)
     for line in output:
         if line.startswith("group:["):
             try:
