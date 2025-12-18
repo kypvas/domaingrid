@@ -120,10 +120,15 @@ def fetch_domain_info(user: str, password: str, host: str, data: DomainData):
             data.domain_name = line.split("Domain Name:")[1].strip()
 
 
-def fetch_groups(user: str, password: str, host: str, data: DomainData):
+def fetch_groups(user: str, password: str, host: str, data: DomainData, debug: bool = False):
     """Fetch all domain groups."""
     cmd = build_rpc_command(user, password, host, "enumdomgroups")
+    if debug:
+        print(f"DEBUG CMD: {cmd}")
     output, success = execute_command(cmd)
+    if debug:
+        print(f"DEBUG OUTPUT: {output}")
+        print(f"DEBUG SUCCESS: {success}")
     for line in output:
         if line.startswith("group:["):
             try:
@@ -730,7 +735,7 @@ Examples:
     fetch_domain_info(args.user, args.password, args.target, data)
 
     print_status("[*] Fetching domain groups...", Fore.YELLOW)
-    fetch_groups(args.user, args.password, args.target, data)
+    fetch_groups(args.user, args.password, args.target, data, debug=True)
     print_status(f"    Found {len(data.groups)} groups", Fore.GREEN)
 
     print_status("[*] Fetching domain users...", Fore.YELLOW)
