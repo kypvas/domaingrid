@@ -110,13 +110,14 @@ def execute_command(command: str, timeout: int = TIMEOUT, return_stderr: bool = 
 
 
 def build_rpc_command(user: str, password: str, host: str, rpc_cmd: str) -> str:
-    """Build rpcclient command string with quoted password."""
-    # Quote only the password with single quotes (don't use shlex.quote as it escapes !)
-    # Single quotes preserve all special characters literally in bash
-    # Escape any single quotes in the password by ending quote, adding escaped quote, starting new quote
-    escaped_pass = password.replace("'", "'\"'\"'")
-    # Also quote the rpc command with single quotes
-    return f"rpcclient -U {user}%'{escaped_pass}' {host} -c '{rpc_cmd}'"
+    """Build rpcclient command string with properly escaped password."""
+    # Use single quotes for password (preserves all special chars except single quote)
+    # For !, we need to handle it specially since history expansion can interfere
+    # Escape single quotes by ending quote, adding escaped quote, starting new quote
+    escaped_pass = password.replace("'", "'\\''")
+    # Use single quotes for password to preserve ! and other special chars
+    # Use double quotes for rpc command
+    return f"rpcclient -U '{user}%{escaped_pass}' {host} -c \"{rpc_cmd}\""
 
 
 def fetch_domain_info(user: str, password: str, host: str, data: DomainData):
