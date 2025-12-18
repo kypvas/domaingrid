@@ -102,7 +102,10 @@ def execute_command(command: str, timeout: int = TIMEOUT) -> Tuple[List[str], bo
 
 def build_rpc_command(user: str, password: str, host: str, rpc_cmd: str) -> str:
     """Build rpcclient command string."""
-    return f"rpcclient -U '{user}%{password}' {host} -c '{rpc_cmd}'"
+    # Use shlex-style escaping for the credentials
+    import shlex
+    creds = f"{user}%{password}"
+    return f"rpcclient -U {shlex.quote(creds)} {host} -c {shlex.quote(rpc_cmd)}"
 
 
 def fetch_domain_info(user: str, password: str, host: str, data: DomainData):
