@@ -683,7 +683,7 @@ def print_summary(data: DomainData):
 
 
 def main():
-    global MAX_WORKERS
+    global MAX_WORKERS, TIMEOUT
 
     parser = argparse.ArgumentParser(
         description="Domain Grid - Advanced Active Directory Enumeration Tool",
@@ -727,7 +727,6 @@ Examples:
         args = parser.parse_args()
 
     # Update global settings from args
-    global MAX_WORKERS, TIMEOUT
     MAX_WORKERS = args.workers
     TIMEOUT = args.timeout
 
@@ -752,7 +751,7 @@ Examples:
     fetch_domain_info(args.user, args.password, args.target, data)
 
     print_status("[*] Fetching domain groups...", Fore.YELLOW)
-    fetch_groups(args.user, args.password, args.target, data, debug=True)
+    fetch_groups(args.user, args.password, args.target, data)
     print_status(f"    Found {len(data.groups)} groups", Fore.GREEN)
 
     print_status("[*] Fetching domain users...", Fore.YELLOW)
