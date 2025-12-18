@@ -101,11 +101,10 @@ def execute_command(command: str, timeout: int = TIMEOUT) -> Tuple[List[str], bo
 
 
 def build_rpc_command(user: str, password: str, host: str, rpc_cmd: str) -> str:
-    """Build rpcclient command string."""
-    # Use shlex-style escaping for the credentials
+    """Build rpcclient command string using stdin for password."""
     import shlex
-    creds = f"{user}%{password}"
-    return f"rpcclient -U {shlex.quote(creds)} {host} -c {shlex.quote(rpc_cmd)}"
+    # Pass password via stdin to avoid shell escaping issues with special chars
+    return f"echo {shlex.quote(password)} | rpcclient -U {shlex.quote(user)} {host} -c {shlex.quote(rpc_cmd)}"
 
 
 def fetch_domain_info(user: str, password: str, host: str, data: DomainData):
